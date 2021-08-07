@@ -1,7 +1,8 @@
 import asyncpraw
 import os
 
-def get_reddit_client():
+
+def create_reddit_client():
     """Initialize AsyncPraw reddit api"""
     return asyncpraw.Reddit(
         client_id=os.getenv("REDDIT_CLIENT_ID"),

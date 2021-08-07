@@ -3,21 +3,26 @@ import json
 from discord.ext import commands
 
 import constants
+import discord_ids
 from utils import google_utils, logging_utils
 from modules.role_react import role_react_constants
+
 
 class RoleReactCog(commands.Cog, name="Role React"):
     """Set up a role react"""
     def __init__(self, bot):
         self.bot = bot
         self.gspread_client = google_utils.create_gspread_client()
-        self.rolereact_sheet = self.gspread_client.open_by_key("1Uk_YGKbgbnJZQn6__he3jdIOamB-1Ytm4i1-v_eDC0U").sheet1
+        self.rolereact_sheet = self.gspread_client.open_by_key(constants.GOOGLE_SHEET_KEY)\
+            .worksheet(constants.ROLE_REACT_SHEET_NAME)
 
     @commands.command(name="rolereact")
     @commands.has_permissions(administrator=True)
     async def rolereact(self, ctx):
-        """Set up an embed which has reactions to gain roles in the server"""
-        logging_utils.log_command("rolereact", ctx.channel, ctx.author)
+        """Set up an embed which has reactions to gain roles in the server
+
+        !rolereact"""
+        await logging_utils.log_command("rolereact", ctx.channel, ctx.author)
         embed = discord.Embed(title="House and Tier signups!",
                               description="Pick your house and tier by reacting to this message!\n"
                                           "Note: You may only have **one** house and **one** tier at a time.\n"
@@ -35,8 +40,9 @@ class RoleReactCog(commands.Cog, name="Role React"):
     async def on_raw_reaction_add(self, payload):
         """Handle a reaction being added to the role react message"""
         print(payload.emoji)
+        print(payload.event_type)
         # Don't do anything when we react to our own message
-        if payload.user_id == constants.BOT_USER_ID:
+        if payload.user_id == discord_ids.BOT_USER_ID:
             print("payload is user id")
             return
 
@@ -46,18 +52,26 @@ class RoleReactCog(commands.Cog, name="Role React"):
             print(f"result cell is none")
             return
 
+        # My plan for this part...
+        # Should I look at the message, loop over all reactions, check the user that reacted. If it's the current user,
+        # remove that reaction? How slow is that?
+        # Shit I don't think I can do this.
+        # I don't think I have access to the users who are on each reaction.
+        # So maybe I should just keep it the way it is for now...I mean, it's fine.
         role_map = json.loads(self.rolereact_sheet.cell(result_cell.row, result_cell.col+1).value)
         if f"{payload.emoji}" in role_map:
+            channel = await self.bot.get_guild(payload.guild_id).get_channel(payload.channel_id).fetch_message(payload.message_id)
+            for reaction in channel.reactions:
+                print(reaction)
             # Ah fuck I have to hardcode everything anyways I think
-            if role_map[f"{payload.emoji}"] in role_react_constants.HOUSE_ROLES and any([role.id == int(house_role) for role in payload.member.roles for house_role in role_react_constants.HOUSE_ROLES]):
-                await reaction.remove(user)
-                return
-            if role_map[f"{payload.emoji}"] in role_react_constants.TIER_ROLES and any([role.id == int(tier_role) for role in payload.member.roles for tier_role in role_react_constants.TIER_ROLES]):
+            #if role_map[f"{payload.emoji}"] in role_react_constants.HOUSE_ROLES and any([role.id == int(house_role) for role in payload.member.roles for house_role in role_react_constants.HOUSE_ROLES]):
+            #    await reaction.remove(user)
+            #    return
+            #if role_map[f"{payload.emoji}"] in role_react_constants.TIER_ROLES and any([role.id == int(tier_role) for role in payload.member.roles for tier_role in role_react_constants.TIER_ROLES]):
                 # TODO: how to deal with no longer having reaction here.
-                await reaction.remove(payload.member)
-                return
+            #    await reaction.remove(payload.member)
+            #    return
             await payload.member.add_roles(self.bot.get_guild(payload.guild_id).get_role(int(role_map[f"{payload.emoji}"])))
-
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):

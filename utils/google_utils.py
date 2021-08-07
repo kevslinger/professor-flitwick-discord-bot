@@ -3,6 +3,7 @@ import os
 import constants
 import json
 
+
 def create_gspread_client():
     """
     Create the client to be able to access google drive (sheets)
