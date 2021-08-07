@@ -7,21 +7,13 @@ from discord.ext import commands
 from asyncprawcore.exceptions import AsyncPrawcoreException
 from modules.reddit_feed.reddit_post import RedditPost
 from modules.reddit_feed import reddit_feed_constants
-from utils import reddit_utils, logging_utils
+from utils import reddit_utils, logging_utils, discord_utils
 import os
 
 # Reddit feed settings
 CHECK_INTERVAL = 5  # seconds to wait before checking again
 SUBMISSION_LIMIT = 5  # number of submissions to check
 
-
-def is_in_guild(guild_id):
-    """Check that command is in a guild"""
-
-    async def predicate(ctx):
-        return ctx.guild and ctx.guild.id == guild_id
-
-    return commands.check(predicate)
 
 
 class RedditFeedCog(commands.Cog, name="Reddit Feed"):
@@ -39,10 +31,11 @@ class RedditFeedCog(commands.Cog, name="Reddit Feed"):
 
     @commands.command(name="resend")
     @commands.has_permissions(administrator=True)
-    @is_in_guild(discord_ids.DUELING_DISCORD_ID)
+    @discord_utils.is_in_guild(discord_ids.DUELING_DISCORD_ID)
     async def resend(self, ctx):
         """Command to resend the last post again.
 		Invoked with ~resend"""
+
         # log command in console
         await logging_utils.log_command("resend", ctx.channel, ctx.author)
         # respond to command

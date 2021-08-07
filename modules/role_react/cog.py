@@ -85,8 +85,8 @@ class RoleReactCog(commands.Cog, name="Role React"):
         role_map = json.loads(self.rolereact_sheet.cell(result_cell.row, result_cell.col+1).value)
         if f"{payload.emoji}" in role_map:
             # Ah fuck I have to hardcode everything anyways I think
-
-            await payload.member.remove_roles(self.bot.get_guild(payload.guild_id).get_role(int(role_map[f"{reaction.emoji}"])))
+            pass
+            #await payload.member.remove_roles(self.bot.get_guild(payload.guild_id).get_role(int(role_map[f"{reaction.emoji}"])))
 
 def setup(bot):
     bot.add_cog(RoleReactCog(bot))

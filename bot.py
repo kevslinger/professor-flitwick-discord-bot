@@ -19,10 +19,9 @@ def main():
 
     @client.event
     async def on_ready():
-        await client.change_presence(activity=discord.Activity(name="Teaching the first years to duel", type=4))
+        await client.change_presence(activity=discord.Activity(name="Duel Club", type=discord.ActivityType.watching))
         for guild in client.guilds:
             print(f"{client.user.name} has connected to the following guild: {guild.name} (id: {guild.id})")
-
 
     client.run(DISCORD_TOKEN)
 
