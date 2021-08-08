@@ -15,9 +15,8 @@ CHECK_INTERVAL = 5  # seconds to wait before checking again
 SUBMISSION_LIMIT = 5  # number of submissions to check
 
 
-
 class RedditFeedCog(commands.Cog, name="Reddit Feed"):
-    """Checks for `resend` command and starts Reddit feed loop to check submissions"""
+    """Listens to r/Dueling and sends posts to #Announcements"""
 
     def __init__(self, bot):
         self.bot = bot
@@ -33,8 +32,9 @@ class RedditFeedCog(commands.Cog, name="Reddit Feed"):
     @commands.has_permissions(administrator=True)
     @discord_utils.is_in_guild(discord_ids.DUELING_DISCORD_ID)
     async def resend(self, ctx):
-        """Command to resend the last post again.
-		Invoked with ~resend"""
+        """Command to resend the last r/Dueling post again. Only for admins.
+
+		Usage: `!resend`"""
 
         # log command in console
         await logging_utils.log_command("resend", ctx.channel, ctx.author)

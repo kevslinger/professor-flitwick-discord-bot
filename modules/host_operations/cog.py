@@ -1,4 +1,6 @@
 from discord.ext import commands
+
+import constants
 from utils import logging_utils
 import discord_ids
 from datetime import datetime
@@ -17,6 +19,7 @@ class GameOpsCog(commands.Cog, name="Game Operations"):
         for player in current_players:
             roster_entry = [player.nick if player.nick is not None else player.name, "", ""]
             for player_role in player.roles:
+                print(player_role.name)
                 if player_role.id in discord_ids.HOUSE_ROLES:
                     roster_entry[1] = guild.get_role(player_role.id).name
                 elif player_role.id in discord_ids.TIER_ROLES:
@@ -27,9 +30,9 @@ class GameOpsCog(commands.Cog, name="Game Operations"):
     @commands.command(name="openlobby")
     @commands.has_permissions(administrator=True)
     async def openlobby(self, ctx):
-        """Unlocks lobby, posts a welcome message like how to use !join, tag @TriviaTuesday
+        """Unlocks lobby posts a welcome message, pings the @TriviaTuesday alerting them a new game is open.
 
-        !openlobby"""
+        Usage: `!openlobby`"""
         await logging_utils.log_command("openlobby", ctx.channel, ctx.author)
         lobby_channel = ctx.guild.get_channel(discord_ids.LOBBY_CHANNEL_ID)
         lock_perms = lobby_channel.overwrites_for(ctx.guild.default_role)
@@ -46,12 +49,10 @@ class GameOpsCog(commands.Cog, name="Game Operations"):
     @commands.command(name="startgame", aliases=["start"])
     @commands.has_permissions(administrator=True)
     async def startgame(self, ctx):
-        """Sends a message on how to sign up for future game pings (i.e. @TriviaTuesday role)
-        Locks the lobby,
-        Posts a message in #gameplay with instructions
-        Tag @CurrentPlayer to say the game is starting
+        """Locks `lobby`. Pings `CurrentPlayer` to announce the game is about to being. Prints out the current roster of players
+        with their HOUSE and TIER to verify.
 
-        !startgame"""
+        Usage: `!startgame`"""
         await logging_utils.log_command("startgame", ctx.channel, ctx.author)
 
         # Lock the lobby channel
@@ -59,8 +60,9 @@ class GameOpsCog(commands.Cog, name="Game Operations"):
         lock_perms = lobby_channel.overwrites_for(ctx.guild.default_role)
         lock_perms.send_messages = False
         await lobby_channel.send(f"The {lobby_channel.mention} is now locked as this week's game is about to begin. Want to"
-                                 f" sign up for future gametime announcement pings? Please see (uhhh, who? what? where?)"
-                                 f" probably {ctx.guild.get_channel(discord_ids.GAME_SIGNUPS_CHANNEL_ID).mention}")
+                                 f" sign up for future gametime announcement pings? Get the "
+                                 f"`{ctx.guild.get_role(discord_ids.TRIVIA_TUESDAY_ROLE_ID).name}` role in "
+                                 f"{ctx.guild.get_channel(discord_ids.GAME_SIGNUPS_CHANNEL_ID).mention}!")
         await lobby_channel.set_permissions(ctx.guild.default_role, overwrite=lock_perms)
 
         # Post the roster
@@ -81,7 +83,7 @@ class GameOpsCog(commands.Cog, name="Game Operations"):
     async def endgame(self, ctx):
         """Removes the CurrentPlayer role from everyone, announces the game has ended
 
-        !endgame"""
+        Usage: `!endgame`"""
         await logging_utils.log_command("endgame", ctx.channel, ctx.author)
 
         current_player_role = ctx.guild.get_role(discord_ids.CURRENT_PLAYER_ROLE_ID)
@@ -91,15 +93,16 @@ class GameOpsCog(commands.Cog, name="Game Operations"):
         announcements_channel = ctx.guild.get_channel(discord_ids.ANNOUNCEMENTS_CHANNEL_ID)
         embed = discord.Embed(title=f"{datetime.now().strftime('%B %d, %Y')} Dueling Game RESULTS",
                               description="Thank you to everyone who played! Today's dueling LIVE game has now ended. "
-                                          "\n\n**RESULTS**? When will the home game be posted? Tonight? idk ")
+                                          "\n\n**RESULTS**? When will the home game be posted? Tonight? idk ",
+                              color=constants.EMBED_COLOR)
         await announcements_channel.send(embed=embed)
 
-    @commands.command(name="roster")
+    @commands.command(name="roster", aliases=["lobby", "players"])
     @commands.has_permissions(administrator=True)
     async def roster(self, ctx):
         """Gets the roster of current players for today's LIVE game
 
-        !roster"""
+        Usage: `!roster`"""
         # Print out the roster
         roster = self.get_roster(ctx.guild, ctx.guild.get_role(discord_ids.CURRENT_PLAYER_ROLE_ID))
         roster = sorted(roster, key=lambda x: x.lower())

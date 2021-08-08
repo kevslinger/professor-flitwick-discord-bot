@@ -12,15 +12,15 @@ class PlayerOpsCog(commands.Cog, name="Player Operations"):
 
     @commands.command(name="join")
     async def join(self, ctx):
-        """Join in the current game
+        """Join in the current game. Must have one HOUSE role and one TIER role to join.
 
-        !join"""
+        Usage: `!join`"""
         await logging_utils.log_command("join", ctx.channel, ctx.author)
         if ctx.channel.id != discord_ids.LOBBY_CHANNEL_ID:
             await ctx.send(f"{ctx.author.mention} cannot join game from {ctx.channel.mention}. Head over "
                      f"to {ctx.guild.get_channel(discord_ids.LOBBY_CHANNEL_ID).mention} and use `{ctx.prefix}join` "
                      f"to play in today's LIVE game!")
-
+            return
         num_house_roles = 0
         num_tier_roles = 0
         for role in ctx.author.roles:
