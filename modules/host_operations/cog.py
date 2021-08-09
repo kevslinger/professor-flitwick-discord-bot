@@ -23,7 +23,7 @@ class GameOpsCog(commands.Cog, name="Game Operations"):
                 if player_role.id in discord_ids.HOUSE_ROLES:
                     roster_entry[1] = guild.get_role(player_role.id).name
                 elif player_role.id in discord_ids.TIER_ROLES:
-                    roster_entry[2] = guild.get_role(player_role.id).name
+                    roster_entry[2] = guild.get_role(player_role.id).name.replace('Player', '').strip()
             roster.append(",".join(roster_entry))
         return roster
 

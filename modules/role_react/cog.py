@@ -6,6 +6,7 @@ import constants
 import discord_ids
 from utils import google_utils, logging_utils
 from datetime import datetime
+import asyncio
 
 
 class RoleReactCog(commands.Cog, name="Role React"):
@@ -15,6 +16,7 @@ class RoleReactCog(commands.Cog, name="Role React"):
         self.gspread_client = google_utils.create_gspread_client()
         self.rolereact_sheet = self.gspread_client.open_by_key(constants.GOOGLE_SHEET_KEY)\
             .worksheet(constants.ROLE_REACT_SHEET_NAME)
+        self.lock = asyncio.Lock()
 
     @commands.command(name="rolereact")
     @commands.has_permissions(administrator=True)
@@ -71,42 +73,52 @@ class RoleReactCog(commands.Cog, name="Role React"):
         # Delete the user's message just because lol
         await ctx.message.delete()
 
-
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         """Handle a reaction being added to the role react message"""
-        #print(payload.emoji)
-        #print(payload.event_type)
         # Don't do anything when we react to our own message
         if payload.user_id == discord_ids.BOT_USER_ID:
-            #print("payload is user id")
             return
 
         # Makes sure the message reacted to is one of our role react messages
         result_cell = self.rolereact_sheet.find(f"{payload.message_id}", in_column=4)
         if result_cell is None:
-            print(f"result cell is none")
             return
 
-        # My plan for this part...
-        # Should I look at the message, loop over all reactions, check the user that reacted. If it's the current user,
-        # remove that reaction? How slow is that?
-        # Shit I don't think I can do this.
-        # I don't think I have access to the users who are on each reaction.
-        # So maybe I should just keep it the way it is for now...I mean, it's fine.
+        guild = self.bot.get_guild(payload.guild_id)
+        channel = guild.get_channel(payload.channel_id)
+        member = guild.get_member(payload.user_id)
+        reaction = str(payload.emoji)
+        # Gets the dictionary which maps reactions to roles from the google sheet.
         role_map = json.loads(self.rolereact_sheet.cell(result_cell.row, result_cell.col+1).value)
-        if f"{payload.emoji}" in role_map:
-            #channel = await self.bot.get_guild(payload.guild_id).get_channel(payload.channel_id).fetch_message(payload.message_id)
-            #for reaction in channel.reactions:
-            #    print(reaction)
-            # Ah I have to hardcode everything anyways I think
-            #if role_map[f"{payload.emoji}"] in discord_ids.HOUSE_ROLES and any([role.id == int(house_role) for role in payload.member.roles for house_role in discord_ids.HOUSE_ROLES]):
-            #    await reaction.remove(user)
-            #    return
-            role = self.bot.get_guild(payload.guild_id).get_role(int(role_map[f"{payload.emoji}"]))
-            await payload.member.add_roles(role)
+        # Without a lock, the behavior when the user selects multiple reactions quickly is weird.
+        async with self.lock:
+            # Check if the reaction is one of the valid ones to give role. If not, just remove the reaction
+            # and we're done.
+            if reaction in role_map:
+                # At this point, we know the user has selected a valid emoji to pick up a role.
+                # We need to loop over the roles in the role map, remove all the others if the user has them,
+                # remove those reactions, and then assign the role
+                role_ids = [role.id for role in member.roles]
+                #print(",".join([role.name for role in member.roles]))
+                # Get the role-react message from the channel
+                # TODO: Does this need to be in the lock?
+                message = await channel.fetch_message(payload.message_id)
+                # Loop over all the possible reacts and roles. If the user has a role other than the one being
+                # reacted to, remove that reaction.
+                # TODO: Should we loop over reactions here? I don't think so
+                for emoji, role_id in role_map.items():
+                    if role_id in role_ids and role_id != role_map[reaction]:
+                        # NOTE: When we remove the reaction, on_raw_reaction_remove get triggered
+                        # and will remove the role. Pretty nifty.
+                        await message.remove_reaction(emoji, member)
 
-            print(f"Gave the {role.name} role to {payload.member}")
+                role = guild.get_role(int(role_map[reaction]))
+                await member.add_roles(role)
+                print(f"Gave the {role.name} role to {member}")
+            else:
+                message = await channel.fetch_message(payload.message_id)
+                await message.remove_reaction(reaction, member)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
@@ -115,7 +127,7 @@ class RoleReactCog(commands.Cog, name="Role React"):
         result_cell = self.rolereact_sheet.find(f"{payload.message_id}", in_column=4)
         if result_cell is None:
             return
-
+        # Get the dictionary which maps reactions to roles.
         role_map = json.loads(self.rolereact_sheet.cell(result_cell.row, result_cell.col+1).value)
         if f"{payload.emoji}" in role_map:
             guild = self.bot.get_guild(payload.guild_id)
