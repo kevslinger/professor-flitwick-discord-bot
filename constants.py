@@ -3,7 +3,7 @@ EMBED_COLOR = 0x000000
 
 GOOGLE_SHEET_KEY = "1JTNPxVZy1CgLLToZ3MBbkyyCajvECQq5GNLZ2fTu51o"
 ROLE_REACT_SHEET_NAME = "RoleReactMessages"
-
+DUELING_SUBREDDIT = "dueling"
 
 ####################
 ## GOOGLE SHEETS ###

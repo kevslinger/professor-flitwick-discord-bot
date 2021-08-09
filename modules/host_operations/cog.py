@@ -7,7 +7,7 @@ from datetime import datetime
 import discord
 
 
-class GameOpsCog(commands.Cog, name="Game Operations"):
+class HostOpsCog(commands.Cog, name="Host Operations"):
     """Commands for Game Hosts to start and end dueling games"""
     def __init__(self, bot):
         self.bot = bot
@@ -19,7 +19,6 @@ class GameOpsCog(commands.Cog, name="Game Operations"):
         for player in current_players:
             roster_entry = [player.nick if player.nick is not None else player.name, "", ""]
             for player_role in player.roles:
-                print(player_role.name)
                 if player_role.id in discord_ids.HOUSE_ROLES:
                     roster_entry[1] = guild.get_role(player_role.id).name
                 elif player_role.id in discord_ids.TIER_ROLES:
@@ -59,8 +58,8 @@ class GameOpsCog(commands.Cog, name="Game Operations"):
         lobby_channel = ctx.guild.get_channel(discord_ids.LOBBY_CHANNEL_ID)
         lock_perms = lobby_channel.overwrites_for(ctx.guild.default_role)
         lock_perms.send_messages = False
-        await lobby_channel.send(f"The {lobby_channel.mention} is now locked as this week's game is about to begin. Want to"
-                                 f" sign up for future gametime announcement pings? Get the "
+        await lobby_channel.send(f"The {lobby_channel.mention} is now locked as this week's game is about to begin. "
+                                 f"Want to sign up for future gametime announcement pings? Get the "
                                  f"`{ctx.guild.get_role(discord_ids.TRIVIA_TUESDAY_ROLE_ID).name}` role in "
                                  f"{ctx.guild.get_channel(discord_ids.GAME_SIGNUPS_CHANNEL_ID).mention}!")
         await lobby_channel.set_permissions(ctx.guild.default_role, overwrite=lock_perms)
@@ -110,4 +109,4 @@ class GameOpsCog(commands.Cog, name="Game Operations"):
 
 
 def setup(bot):
-    bot.add_cog(GameOpsCog(bot))
+    bot.add_cog(HostOpsCog(bot))
