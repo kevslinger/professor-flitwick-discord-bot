@@ -58,10 +58,12 @@ class HostOpsCog(commands.Cog, name="Host Operations"):
         lobby_channel = ctx.guild.get_channel(discord_ids.LOBBY_CHANNEL_ID)
         lock_perms = lobby_channel.overwrites_for(ctx.guild.default_role)
         lock_perms.send_messages = False
-        await lobby_channel.send(f"The {lobby_channel.mention} is now locked as this week's game is about to begin. "
-                                 f"Want to sign up for future gametime announcement pings? Get the "
-                                 f"`{ctx.guild.get_role(discord_ids.TRIVIA_TUESDAY_ROLE_ID).name}` role in "
-                                 f"{ctx.guild.get_channel(discord_ids.GAME_SIGNUPS_CHANNEL_ID).mention}!")
+        embed = discord.Embed(title="LIVE Game has Begun!",
+                              description=f"The {lobby_channel.mention} is now locked as this week's LIVE game is about"
+                                          f" to begin. Want to sign up for future gametime announcement pings? Get the "
+                                          f"{ctx.guild.get_role(discord_ids.TRIVIA_TUESDAY_ROLE_ID).mention} role in "
+                                          f"{ctx.guild.get_channel(discord_ids.GAME_SIGNUPS_CHANNEL_ID).mention}!")
+        await lobby_channel.send(embed=embed)
         await lobby_channel.set_permissions(ctx.guild.default_role, overwrite=lock_perms)
 
         # Post the roster
@@ -70,9 +72,9 @@ class HostOpsCog(commands.Cog, name="Host Operations"):
         # Ping CurrentPlayer in #gameplay
         gameplay_channel = ctx.guild.get_channel(discord_ids.GAMEPLAY_CHANNEL_ID)
         await gameplay_channel.send(f"{ctx.guild.get_role(discord_ids.CURRENT_PLAYER_ROLE_ID).mention} "
-                                    f"The current game is set to begin!\n\n"
-                                    f"The following players have signed up for today's LIVE game. If you see an error "
-                                    f"or omission, please let today's host, {ctx.author.mention}, know as soon as possible:\n\n"
+                                    f"Today's LIVE game is set to begin!\n\n"
+                                    f"The following players have signed up for today's LIVE game. If you see any errors "
+                                    f"or omissions, please let today's host, {ctx.author.mention}, know as soon as possible:\n\n"
                                     f"{chr(10).join(roster)}")
         game_logs_channel = ctx.guild.get_channel(discord_ids.GAME_LOG_CHANNEL_ID)
         await game_logs_channel.send(chr(10).join(roster))
@@ -89,12 +91,17 @@ class HostOpsCog(commands.Cog, name="Host Operations"):
         for player in current_player_role.members:
             await player.remove_roles(current_player_role)
 
-        announcements_channel = ctx.guild.get_channel(discord_ids.ANNOUNCEMENTS_CHANNEL_ID)
-        embed = discord.Embed(title=f"{datetime.now().strftime('%B %d, %Y')} Dueling Game RESULTS",
-                              description="Thank you to everyone who played! Today's dueling LIVE game has now ended. "
-                                          "\n\n**RESULTS**? When will the home game be posted? Tonight? idk ",
+        lobby_channel = ctx.guild.get_channel(discord_ids.LOBBY_CHANNEL_ID)
+        embed = discord.Embed(title=f"{datetime.now().strftime('%B %d, %Y')} Dueling LIVE Game Conclusion",
+                              description=f"Thank you to everyone who played! This week's LIVE game has now ended. If "
+                                          f"you didn't get a chance to play in the LIVE game, you can still take the "
+                                          f"Home quiz on google forms this week.\n\n"
+                                          f"Want to sign up for future gametime announcement pings? Get the "
+                                          f"{ctx.guild.get_role(discord_ids.TRIVIA_TUESDAY_ROLE_ID).mention} role in "
+                                          f"{ctx.guild.get_channel(discord_ids.GAME_SIGNUPS_CHANNEL_ID).mention}!",
                               color=constants.EMBED_COLOR)
-        await announcements_channel.send(embed=embed)
+
+        await lobby_channel.send(embed=embed)
 
     @commands.command(name="roster", aliases=["lobby", "players"])
     @commands.has_permissions(administrator=True)
