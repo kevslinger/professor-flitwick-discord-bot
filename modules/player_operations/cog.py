@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 
 import discord_ids
@@ -70,6 +71,30 @@ class PlayerOpsCog(commands.Cog, name="Player Operations"):
             return
         await ctx.author.remove_roles(ctx.guild.get_role(discord_ids.CURRENT_PLAYER_ROLE_ID))
         await ctx.message.add_reaction(EMOJIS[":white_check_mark:"])
+
+    @commands.command(name="msghost")
+    @commands.has_any_role(
+        discord_ids.CURRENT_PLAYER_ROLE_ID
+    )
+    async def msghost(self, ctx):
+        """Opens a channel in the gameplay category which lets the player talk to the host
+
+        Usage: `!msghost`"""
+        await logging_utils.log_command("msghost", ctx.channel, ctx.author)
+
+        if ctx.channel.id != discord_ids.GAMEPLAY_CHANNEL_ID and ctx.channel.id != discord_ids.LOBBY_CHANNEL_ID:
+            await ctx.send(f"{ctx.author.mention} cannot open host channel here. Please use `{ctx.prefix}msghost` in "
+                           f"either the {ctx.guild.get_channel(discord_ids.GAMEPLAY_CHANNEL_ID).mention} or "
+                           f"{ctx.guild.get_channel(discord_ids.LOBBY_CHANNEL_ID).mention}.")
+            return
+
+        try:
+            new_channel = await ctx.guild.create_text_channel(f"{ctx.author.nick if ctx.author.nick is not None else ctx.author.name}",
+                                                              category=ctx.channel.category,
+                                                              overwrites={ctx.author: discord.PermissionOverwrite(send_messages=True)})
+        except discord.Forbidden:
+            await ctx.guild.get_channel(discord_ids.BOT_LOG_CHANNEL_ID).send(f"ACCESS DENIED: Could not create channel "
+                                                                             f"for {ctx.author.name} to speak to host.")
 
 
 def setup(bot):
