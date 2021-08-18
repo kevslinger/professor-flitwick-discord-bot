@@ -74,7 +74,7 @@ class PlayerOpsCog(commands.Cog, name="Player Operations"):
 
     @commands.command(name="msghost")
     @commands.has_any_role(
-        discord_ids.CURRENT_PLAYER_ROLE_ID
+        discord_ids.CURRENT_PLAYER_ROLE_ID,
     )
     async def msghost(self, ctx):
         """Opens a channel in the gameplay category which lets the player talk to the host
@@ -91,7 +91,9 @@ class PlayerOpsCog(commands.Cog, name="Player Operations"):
         try:
             new_channel = await ctx.guild.create_text_channel(f"{ctx.author.nick if ctx.author.nick is not None else ctx.author.name}",
                                                               category=ctx.channel.category,
-                                                              overwrites={ctx.author: discord.PermissionOverwrite(send_messages=True)})
+                                                              overwrites={
+                                                                  ctx.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+                                                                  ctx.author: discord.PermissionOverwrite(send_messages=True)})
         except discord.Forbidden:
             await ctx.guild.get_channel(discord_ids.BOT_LOG_CHANNEL_ID).send(f"ACCESS DENIED: Could not create channel "
                                                                              f"for {ctx.author.name} to speak to host.")
