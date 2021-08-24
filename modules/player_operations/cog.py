@@ -93,7 +93,8 @@ class PlayerOpsCog(commands.Cog, name="Player Operations"):
                                                               category=ctx.channel.category,
                                                               overwrites={
                                                                   ctx.guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                                                                  ctx.author: discord.PermissionOverwrite(send_messages=True)})
+                                                                  ctx.author: discord.PermissionOverwrite(read_messages=True,
+                                                                                                          send_messages=True)})
         except discord.Forbidden:
             await ctx.guild.get_channel(discord_ids.BOT_LOG_CHANNEL_ID).send(f"ACCESS DENIED: Could not create channel "
                                                                              f"for {ctx.author.name} to speak to host.")

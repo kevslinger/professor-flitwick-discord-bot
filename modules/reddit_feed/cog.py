@@ -6,12 +6,13 @@ import discord
 from discord.ext.tasks import loop
 from discord.ext import commands
 from asyncprawcore.exceptions import AsyncPrawcoreException
-from modules.reddit_feed.reddit_post import RedditPost
+from modules.reddit_feed.reddit_post import RedditPost, check_livegame_comment
 from utils import reddit_utils, logging_utils, discord_utils
 
 # Reddit feed settings
 CHECK_INTERVAL = 5  # seconds to wait before checking again
 SUBMISSION_LIMIT = 5  # number of submissions to check
+COMMENT_LIMIT = 5 # number of comments to check
 
 
 class RedditFeedCog(commands.Cog, name="Reddit Feed"):
@@ -71,6 +72,18 @@ class RedditFeedCog(commands.Cog, name="Reddit Feed"):
                                     inline=False)
                     channel = self.bot.get_channel(discord_ids.ANNOUNCEMENTS_CHANNEL_ID)
                     await channel.send(embed=embed)
+            async for comment in subreddit.comments(limit=COMMENT_LIMIT):
+                # Check if the comment has been saved before
+                if not comment.saved:
+                    # save comment to mark as seen
+                    await comment.save()
+
+                    is_livegame_post = await check_livegame_comment(comment)
+                    if is_livegame_post:
+                        embed = discord.Embed()
+                        embed.add_field(name="This week's Dueling HOME Quiz is now open!",
+                                        value=f"https://www.reddit.com{comment.permalink}")
+                        await self.bot.get_channel(discord_ids.ANNOUNCEMENTS_CHANNEL_ID).send(embed=embed)
         except AsyncPrawcoreException as err:
             print(f"EXCEPTION: AsyncPrawcoreException. {err}")
             time.sleep(10)
