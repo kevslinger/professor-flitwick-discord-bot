@@ -82,7 +82,7 @@ class HostOpsCog(commands.Cog, name="Host Operations"):
     @commands.command(name="endgame", alises=["end"])
     @commands.has_permissions(administrator=True)
     async def endgame(self, ctx):
-        """Removes the CurrentPlayer role from everyone, announces the game has ended
+        """Removes the CurrentPlayer role from everyone, announces the game has ended in lobby and welcome channels.
 
         Usage: `!endgame`"""
         await logging_utils.log_command("endgame", ctx.channel, ctx.author)
@@ -91,7 +91,6 @@ class HostOpsCog(commands.Cog, name="Host Operations"):
         for player in current_player_role.members:
             await player.remove_roles(current_player_role)
 
-        lobby_channel = ctx.guild.get_channel(discord_ids.LOBBY_CHANNEL_ID)
         embed = discord.Embed(title=f"{datetime.now().strftime('%B %d, %Y')} Dueling LIVE Game Conclusion",
                               description=f"Thank you to everyone who played! This week's LIVE game has now ended. If "
                                           f"you didn't get a chance to play in the LIVE game, you can still take the "
@@ -100,8 +99,10 @@ class HostOpsCog(commands.Cog, name="Host Operations"):
                                           f"{ctx.guild.get_role(discord_ids.TRIVIA_TUESDAY_ROLE_ID).mention} role in "
                                           f"{ctx.guild.get_channel(discord_ids.GAME_SIGNUPS_CHANNEL_ID).mention}!",
                               color=constants.EMBED_COLOR)
-
+        lobby_channel = ctx.guild.get_channel(discord_ids.LOBBY_CHANNEL_ID)
+        welcome_channel = ctx.guild.get_channel(discord_ids.WELCOME_CHANNEL_ID)
         await lobby_channel.send(embed=embed)
+        await welcome_channel.send(embed=embed)
 
     @commands.command(name="roster", aliases=["lobby", "players"])
     @commands.has_permissions(administrator=True)
