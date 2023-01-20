@@ -30,18 +30,21 @@ class NewHelpCommand(commands.MinimalHelpCommand):
         no_category_commands = await self.filter_commands(mapping[None], sort=True)
         del mapping[None]
         for cog, commands in sorted(mapping.items(), key=lambda x: x[0].qualified_name):
-            if cog.qualified_name == 'Help':
+            if cog.qualified_name == "Help":
                 continue
             name = "No Category" if cog is None else cog.qualified_name
             filtered = await self.filter_commands(commands, sort=True)
             if filtered:
                 value = f"{chr(10)}".join(f"{prefix}{c.name}" for c in filtered)
-                #if cog and cog.description:
-                #    value = f"{cog.description}\n{value}"
                 embed.add_field(name=name, value=value)
 
         if no_category_commands:
-            embed.add_field(name="No category", value=f"{chr(10)}".join(f"{prefix}{c.name}" for c in no_category_commands))
+            embed.add_field(
+                name="No category",
+                value=f"{chr(10)}".join(
+                    f"{prefix}{c.name}" for c in no_category_commands
+                ),
+            )
 
         embed.set_footer(text=self.get_ending_note())
         await self.get_destination().send(embed=embed)

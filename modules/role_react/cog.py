@@ -11,11 +11,13 @@ import asyncio
 
 class RoleReactCog(commands.Cog, name="Role React"):
     """Set up a role react message where people can choose their own roles in the server"""
+
     def __init__(self, bot):
         self.bot = bot
         self.gspread_client = google_utils.create_gspread_client()
-        self.rolereact_sheet = self.gspread_client.open_by_key(constants.GOOGLE_SHEET_KEY)\
-            .worksheet(constants.ROLE_REACT_SHEET_NAME)
+        self.rolereact_sheet = self.gspread_client.open_by_key(
+            constants.GOOGLE_SHEET_KEY
+        ).worksheet(constants.ROLE_REACT_SHEET_NAME)
         self.lock = asyncio.Lock()
 
     @commands.command(name="rolereact")
@@ -26,47 +28,72 @@ class RoleReactCog(commands.Cog, name="Role React"):
         Usage: `!rolereact`"""
         await logging_utils.log_command("rolereact", ctx.channel, ctx.author)
         # Creating, sending, logging in google sheets, and adding reacts for the HOUSE signup embed
-        house_embed = discord.Embed(title="House Signups!",
-                              description="Pick your house by reacting to this message!\n"
-                                          "Note: You may only have **one** house at a time.\n"
-                                          "To change tier, remove the reaction for your current tier and add the reaction "
-                                          "for your new tier\n\n"
-                                          f"{chr(10).join([f'{emoji}: <@&{role}>' for emoji, role in discord_ids.HOUSE_REACT_DICT.items()])}",
-                              color=constants.EMBED_COLOR)
+        house_embed = discord.Embed(
+            title="House Signups!",
+            description="Pick your house by reacting to this message!\n"
+            "Note: You may only have **one** house at a time.\n"
+            "To change tier, remove the reaction for your current tier and add the reaction "
+            "for your new tier\n\n"
+            f"{chr(10).join([f'{emoji}: <@&{role}>' for emoji, role in discord_ids.HOUSE_REACT_DICT.items()])}",
+            color=constants.EMBED_COLOR,
+        )
         house_msg = await ctx.send(embed=house_embed)
         # Add the message to our DB (google sheets) for combination with on_raw_reaction_add and on_raw_reaction_remove
-        self.rolereact_sheet.append_row([datetime.now().strftime("%m/%d/%y %H:%M:%S"), ctx.guild.name, ctx.channel.name,
-                                         f"{house_msg.id}", json.dumps(discord_ids.HOUSE_REACT_DICT)])
+        self.rolereact_sheet.append_row(
+            [
+                datetime.now().strftime("%m/%d/%y %H:%M:%S"),
+                ctx.guild.name,
+                ctx.channel.name,
+                f"{house_msg.id}",
+                json.dumps(discord_ids.HOUSE_REACT_DICT),
+            ]
+        )
         # Add all the appropriate reactions to the message
         for emoji in discord_ids.HOUSE_REACT_DICT:
             await house_msg.add_reaction(emoji)
         # Creating, sending, logging in google sheets, and adding reacts for the TIER signup embed
-        tier_embed = discord.Embed(title="Tier Signups!",
-                              description="Pick your tier by reacting to this message!\n"
-                                          "Note: You may only have **one** tier at a time.\n"
-                                          "To change tier, remove the reaction for your current tier and add the reaction "
-                                          "for your new tier\n\n"
-                                          f"{chr(10).join([f'{emoji}: <@&{role}>' for emoji, role in discord_ids.TIER_REACT_DICT.items()])}",
-                              color=constants.EMBED_COLOR)
+        tier_embed = discord.Embed(
+            title="Tier Signups!",
+            description="Pick your tier by reacting to this message!\n"
+            "Note: You may only have **one** tier at a time.\n"
+            "To change tier, remove the reaction for your current tier and add the reaction "
+            "for your new tier\n\n"
+            f"{chr(10).join([f'{emoji}: <@&{role}>' for emoji, role in discord_ids.TIER_REACT_DICT.items()])}",
+            color=constants.EMBED_COLOR,
+        )
         tier_msg = await ctx.send(embed=tier_embed)
         # Add the message to our DB (google sheets) for combination with on_raw_reaction_add and on_raw_reaction_remove
         self.rolereact_sheet.append_row(
-            [datetime.now().strftime("%m/%d/%y %H:%M:%S"), ctx.guild.name, ctx.channel.name, f"{tier_msg.id}",
-             json.dumps(discord_ids.TIER_REACT_DICT)])
+            [
+                datetime.now().strftime("%m/%d/%y %H:%M:%S"),
+                ctx.guild.name,
+                ctx.channel.name,
+                f"{tier_msg.id}",
+                json.dumps(discord_ids.TIER_REACT_DICT),
+            ]
+        )
         # Add all the appropriate reactions to the message
         for emoji in discord_ids.TIER_REACT_DICT:
             await tier_msg.add_reaction(emoji)
         # Creating, sending, logging in google sheets, and adding reacts for the TIER signup embed
-        ping_embed = discord.Embed(title="Ping Signups!",
-                              description=f"React with {discord_ids.CALENDAR_EMOTE} to get the "
-                                          f"{ctx.guild.get_role(discord_ids.TRIVIA_TUESDAY_ROLE_ID).mention} role and "
-                                          f"receive pings when each game is starting!",
-                              color=constants.EMBED_COLOR)
+        ping_embed = discord.Embed(
+            title="Ping Signups!",
+            description=f"React with {discord_ids.CALENDAR_EMOTE} to get the "
+            f"{ctx.guild.get_role(discord_ids.TRIVIA_TUESDAY_ROLE_ID).mention} role and "
+            f"receive pings when each game is starting!",
+            color=constants.EMBED_COLOR,
+        )
         ping_msg = await ctx.send(embed=ping_embed)
         # Add the message to our DB (google sheets) for combination with on_raw_reaction_add and on_raw_reaction_remove
         self.rolereact_sheet.append_row(
-            [datetime.now().strftime("%m/%d/%y %H:%M:%S"), ctx.guild.name, ctx.channel.name, f"{ping_msg.id}",
-             json.dumps(discord_ids.PING_REACT_DICT)])
+            [
+                datetime.now().strftime("%m/%d/%y %H:%M:%S"),
+                ctx.guild.name,
+                ctx.channel.name,
+                f"{ping_msg.id}",
+                json.dumps(discord_ids.PING_REACT_DICT),
+            ]
+        )
         # Add all the appropriate reactions to the message
         for emoji in discord_ids.PING_REACT_DICT:
             await ping_msg.add_reaction(emoji)
@@ -90,7 +117,9 @@ class RoleReactCog(commands.Cog, name="Role React"):
         member = guild.get_member(payload.user_id)
         reaction = str(payload.emoji)
         # Gets the dictionary which maps reactions to roles from the google sheet.
-        role_map = json.loads(self.rolereact_sheet.cell(result_cell.row, result_cell.col+1).value)
+        role_map = json.loads(
+            self.rolereact_sheet.cell(result_cell.row, result_cell.col + 1).value
+        )
         # Without a lock, the behavior when the user selects multiple reactions quickly is weird.
         async with self.lock:
             # Check if the reaction is one of the valid ones to give role. If not, just remove the reaction
@@ -100,7 +129,6 @@ class RoleReactCog(commands.Cog, name="Role React"):
                 # We need to loop over the roles in the role map, remove all the others if the user has them,
                 # remove those reactions, and then assign the role
                 role_ids = [role.id for role in member.roles]
-                #print(",".join([role.name for role in member.roles]))
                 # Get the role-react message from the channel
                 # TODO: Does this need to be in the lock?
                 message = await channel.fetch_message(payload.message_id)
@@ -128,7 +156,9 @@ class RoleReactCog(commands.Cog, name="Role React"):
         if result_cell is None:
             return
         # Get the dictionary which maps reactions to roles.
-        role_map = json.loads(self.rolereact_sheet.cell(result_cell.row, result_cell.col+1).value)
+        role_map = json.loads(
+            self.rolereact_sheet.cell(result_cell.row, result_cell.col + 1).value
+        )
         if f"{payload.emoji}" in role_map:
             guild = self.bot.get_guild(payload.guild_id)
             role = guild.get_role(int(role_map[f"{payload.emoji}"]))

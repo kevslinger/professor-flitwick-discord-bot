@@ -12,7 +12,7 @@ from utils import reddit_utils, logging_utils, discord_utils
 # Reddit feed settings
 CHECK_INTERVAL = 5  # seconds to wait before checking again
 SUBMISSION_LIMIT = 5  # number of submissions to check
-COMMENT_LIMIT = 5 # number of comments to check
+COMMENT_LIMIT = 5  # number of comments to check
 
 
 class RedditFeedCog(commands.Cog, name="Reddit Feed"):
@@ -34,7 +34,7 @@ class RedditFeedCog(commands.Cog, name="Reddit Feed"):
     async def resend(self, ctx):
         """Command to resend the last r/Dueling post again. Only for admins.
 
-		Usage: `!resend`"""
+        Usage: `!resend`"""
         # log command in console
         await logging_utils.log_command("resend", ctx.channel, ctx.author)
         # respond to command
@@ -43,12 +43,13 @@ class RedditFeedCog(commands.Cog, name="Reddit Feed"):
         subreddit = await self.reddit.subreddit()
         async for submission in subreddit.new(limit=1):
             # process submission
-            subreddit, title, author, message = RedditPost(self.bot, submission).process_post()
-            embed = discord.Embed(title=title,
-                                  description=f"By u/{author}")
-            embed.add_field(name=f"New Post in r/{subreddit}!",
-                            value=message,
-                            inline=False)
+            subreddit, title, author, message = RedditPost(
+                self.bot, submission
+            ).process_post()
+            embed = discord.Embed(title=title, description=f"By u/{author}")
+            embed.add_field(
+                name=f"New Post in r/{subreddit}!", value=message, inline=False
+            )
             channel = self.bot.get_channel(discord_ids.ANNOUNCEMENTS_CHANNEL_ID)
             await channel.send(embed=embed)
 
@@ -61,29 +62,37 @@ class RedditFeedCog(commands.Cog, name="Reddit Feed"):
             async for submission in subreddit.new(limit=SUBMISSION_LIMIT):
                 # check if the post has been seen before
                 if not submission.saved:
-                    # save post to mark as seen
+                    # save post to mark as seen so we don't look at it again.
                     await submission.save()
                     # process submission
-                    subreddit, title, author, message = RedditPost(self.bot, submission).process_post()
-                    embed = discord.Embed(title=title,
-                                          description=f"By u/{author}")
-                    embed.add_field(name=f"New Post in r/{subreddit}!",
-                                    value=message,
-                                    inline=False)
+                    subreddit, title, author, message = RedditPost(
+                        self.bot, submission
+                    ).process_post()
+                    embed = discord.Embed(title=title, description=f"By u/{author}")
+                    embed.add_field(
+                        name=f"New Post in r/{subreddit}!", value=message, inline=False
+                    )
                     channel = self.bot.get_channel(discord_ids.ANNOUNCEMENTS_CHANNEL_ID)
+                    # Send the announcement to the announcements channel
                     await channel.send(embed=embed)
             async for comment in subreddit.comments(limit=COMMENT_LIMIT):
                 # Check if the comment has been saved before
                 if not comment.saved:
-                    # save comment to mark as seen
+                    # save comment to mark as seen so we don't look at it again.
                     await comment.save()
-
+                    # Check to see if the comment announces the live game is closed.
                     is_livegame_post = await check_livegame_comment(comment)
+                    # If so, that means the home quiz is now open.
                     if is_livegame_post:
                         embed = discord.Embed()
-                        embed.add_field(name="This week's Dueling HOME Quiz is now open!",
-                                        value=f"https://www.reddit.com{comment.permalink}")
-                        await self.bot.get_channel(discord_ids.ANNOUNCEMENTS_CHANNEL_ID).send(embed=embed)
+                        embed.add_field(
+                            name="This week's Dueling HOME Quiz is now open!",
+                            value=f"https://www.reddit.com{comment.permalink}",
+                        )
+                        # Send the announcement to the announcements channel.
+                        await self.bot.get_channel(
+                            discord_ids.ANNOUNCEMENTS_CHANNEL_ID
+                        ).send(embed=embed)
         except AsyncPrawcoreException as err:
             print(f"EXCEPTION: AsyncPrawcoreException. {err}")
             time.sleep(10)
